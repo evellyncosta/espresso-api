@@ -2,6 +2,7 @@ package com.espresso.api.orderitem
 
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -12,6 +13,6 @@ class OrderItemController(
     private val orderItemService: OrderItemService
 ) {
     @GetMapping
-    fun findAll(pageable: Pageable): Page<OrderItemProjection> =
+    fun findAll(@ParameterObject pageable: Pageable): Page<OrderItemProjection> =
         orderItemService.findAll(pageable)
 }
