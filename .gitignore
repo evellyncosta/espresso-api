@@ -39,6 +39,7 @@ out/
 
 ### Kotlin ###
 .kotlin
+gradle-9.5.1-bin.zip
 
 ### Environment ###
 .env

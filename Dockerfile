@@ -1,18 +1,25 @@
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 
 WORKDIR /workspace
 
-COPY gradlew settings.gradle.kts build.gradle.kts ./
-COPY gradle ./gradle
+COPY gradle-9.5.1-bin.zip /tmp/gradle.zip
 
-RUN chmod +x gradlew
+RUN mkdir -p /opt/gradle \
+    && cd /opt/gradle \
+    && jar xf /tmp/gradle.zip \
+    && chmod +x /opt/gradle/gradle-9.5.1/bin/gradle \
+    && rm /tmp/gradle.zip
+
+ENV PATH="/opt/gradle/gradle-9.5.1/bin:${PATH}"
+
+COPY settings.gradle.kts build.gradle.kts ./
 
 COPY src ./src
 
-RUN ./gradlew bootJar --no-daemon \
+RUN gradle bootJar --no-daemon \
     && cp build/libs/*-SNAPSHOT.jar /workspace/app.jar
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
