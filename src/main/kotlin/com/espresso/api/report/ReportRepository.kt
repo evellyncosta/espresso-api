@@ -11,16 +11,14 @@ interface ReportRepository : Repository<Customer, Long> {
             SELECT
                 c.id AS "customerId",
                 c.name AS "customerName",
-                COUNT(DISTINCT o.id) AS "totalOrders",
-                SUM(oi.quantity) AS "totalItems",
-                SUM(oi.quantity * oi.unit_price) AS "totalSpent"
+                SUM(s.total_orders) AS "totalOrders",
+                SUM(s.total_items) AS "totalItems",
+                SUM(s.total_spent) AS "totalSpent"
             FROM customer c
-            JOIN orders o
-                ON o.customer_id = c.id
-            JOIN order_item oi
-                ON oi.order_id = o.id
-            WHERE o.created_at >= :startDate
-              AND o.created_at < :endDate
+            JOIN customer_daily_summary s
+                ON s.customer_id = c.id
+            WHERE s.summary_date >= CAST(:startDate AS DATE)
+              AND s.summary_date < CAST(:endDate AS DATE)
             GROUP BY c.id, c.name
             ORDER BY "totalSpent" DESC
             LIMIT 100
