@@ -19,7 +19,10 @@ repositories {
 	mavenCentral()
 }
 
+val datadogAgent by configurations.creating
+
 dependencies {
+	datadogAgent("com.datadoghq:dd-java-agent:1.65.1")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -35,6 +38,16 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.register<Copy>("copyDatadogJavaAgent") {
+	from(datadogAgent)
+	into(layout.buildDirectory.dir("datadog"))
+	rename { "dd-java-agent.jar" }
+}
+
+tasks.named("bootJar") {
+	dependsOn("copyDatadogJavaAgent")
 }
 
 	kotlin {
