@@ -2,21 +2,14 @@ FROM eclipse-temurin:25-jdk AS build
 
 WORKDIR /workspace
 
-COPY gradle-9.5.1-bin.zip /tmp/gradle.zip
+COPY gradlew settings.gradle.kts build.gradle.kts ./
+COPY gradle ./gradle
 
-RUN mkdir -p /opt/gradle \
-    && cd /opt/gradle \
-    && jar xf /tmp/gradle.zip \
-    && chmod +x /opt/gradle/gradle-9.5.1/bin/gradle \
-    && rm /tmp/gradle.zip
-
-ENV PATH="/opt/gradle/gradle-9.5.1/bin:${PATH}"
-
-COPY settings.gradle.kts build.gradle.kts ./
+RUN chmod +x ./gradlew
 
 COPY src ./src
 
-RUN gradle bootJar --no-daemon \
+RUN ./gradlew bootJar --no-daemon \
     && cp build/libs/*-SNAPSHOT.jar /workspace/app.jar \
     && cp build/datadog/dd-java-agent.jar /workspace/dd-java-agent.jar
 
@@ -42,4 +35,4 @@ ENV DD_RUNTIME_METRICS_ENABLED="true"
 ENV DD_AGENT_HOST="127.0.0.1"
 ENV DD_TRACE_AGENT_PORT="8126"
 
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar /app/app.jar"]
