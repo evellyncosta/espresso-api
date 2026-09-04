@@ -19,10 +19,10 @@ repositories {
 	mavenCentral()
 }
 
-val datadogAgent by configurations.creating
+val openTelemetryJavaAgent by configurations.creating
 
 dependencies {
-	datadogAgent("com.datadoghq:dd-java-agent:1.65.1")
+	openTelemetryJavaAgent("io.opentelemetry.javaagent:opentelemetry-javaagent:2.28.1")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -40,14 +40,14 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.register<Copy>("copyDatadogJavaAgent") {
-	from(datadogAgent)
-	into(layout.buildDirectory.dir("datadog"))
-	rename { "dd-java-agent.jar" }
+tasks.register<Copy>("copyOpenTelemetryJavaAgent") {
+	from(openTelemetryJavaAgent)
+	into(layout.buildDirectory.dir("opentelemetry"))
+	rename { "opentelemetry-javaagent.jar" }
 }
 
 tasks.named("bootJar") {
-	dependsOn("copyDatadogJavaAgent")
+	dependsOn("copyOpenTelemetryJavaAgent")
 }
 
 	kotlin {

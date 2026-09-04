@@ -11,7 +11,7 @@ COPY src ./src
 
 RUN ./gradlew bootJar --no-daemon \
     && cp build/libs/*-SNAPSHOT.jar /workspace/app.jar \
-    && cp build/datadog/dd-java-agent.jar /workspace/dd-java-agent.jar
+    && cp build/opentelemetry/opentelemetry-javaagent.jar /workspace/opentelemetry-javaagent.jar
 
 FROM eclipse-temurin:25-jre
 
@@ -20,19 +20,21 @@ WORKDIR /app
 RUN useradd --system --create-home --shell /usr/sbin/nologin appuser
 
 COPY --from=build /workspace/app.jar /app/app.jar
-COPY --from=build /workspace/dd-java-agent.jar /opt/datadog/dd-java-agent.jar
+COPY --from=build /workspace/opentelemetry-javaagent.jar /opt/opentelemetry/opentelemetry-javaagent.jar
 
 USER appuser
 
 EXPOSE 8080
 
 ENV JAVA_OPTS=""
-ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/datadog/dd-java-agent.jar"
-ENV DD_SERVICE="espresso-api"
-ENV DD_TRACE_ENABLED="true"
-ENV DD_LOGS_INJECTION="true"
-ENV DD_RUNTIME_METRICS_ENABLED="true"
-ENV DD_AGENT_HOST="127.0.0.1"
-ENV DD_TRACE_AGENT_PORT="8126"
+ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/opentelemetry/opentelemetry-javaagent.jar"
+ENV OTEL_SERVICE_NAME="espresso-api"
+ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=production"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="http://espresso-app-otel-collector:4317"
+ENV OTEL_TRACES_EXPORTER="otlp"
+ENV OTEL_METRICS_EXPORTER="otlp"
+ENV OTEL_LOGS_EXPORTER="none"
+ENV OTEL_PROPAGATORS="tracecontext,baggage"
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar /app/app.jar"]

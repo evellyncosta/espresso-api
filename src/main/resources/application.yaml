@@ -22,7 +22,7 @@ spring:
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [requestId=%X{requestId:-}] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [requestId=%X{requestId:-} trace_id=%X{trace_id:-} span_id=%X{span_id:-}] %logger{36} - %msg%n"
 
 management:
   endpoints:

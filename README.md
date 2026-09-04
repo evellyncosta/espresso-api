@@ -49,6 +49,14 @@ DB_PORT=5432
 DB_NAME=espresso-dev
 DB_USER=postgres
 DB_PASSWORD=postgres
+OTEL_SERVICE_NAME=espresso-api
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=local
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+OTEL_TRACES_EXPORTER=otlp
+OTEL_METRICS_EXPORTER=otlp
+OTEL_LOGS_EXPORTER=none
+OTEL_PROPAGATORS=tracecontext,baggage
 ```
 
 Também é possível informar uma URL completa com `DB_URL`, por exemplo:
@@ -118,6 +126,31 @@ GET /actuator/health
 GET /actuator/health/readiness
 ```
 
+## Telemetria OpenTelemetry
+
+A imagem da API usa o OpenTelemetry Java Agent para instrumentar automaticamente Spring MVC, JDBC/PostgreSQL, Redis e a JVM. Os logs preservam `requestId` e incluem `trace_id` e `span_id` quando existe um trace ativo. Logs continuam no console; a coleta centralizada de logs nao faz parte desta configuracao.
+
+Em producao, a API deve enviar OTLP/gRPC ao endpoint interno do collector dedicado fornecido pela plataforma de observabilidade, sem acessar diretamente as portas publicas do SigNoz:
+
+```dotenv
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+OTEL_EXPORTER_OTLP_ENDPOINT=http://espresso-app-otel-collector:4317
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=production
+```
+
+Para desenvolvimento com um collector local, mantenha `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317`. Para desabilitar exportacao sem remover o agent, use:
+
+```dotenv
+OTEL_TRACES_EXPORTER=none
+OTEL_METRICS_EXPORTER=none
+```
+
+### Contrato com o collector
+
+O collector dedicado, suas redes Docker, exporters, credenciais e integracao com o SigNoz sao operados pelo repositorio de observabilidade. Este repositorio mantem apenas a configuracao cliente da API: o endpoint OTLP interno, a identidade do servico e o comportamento nao bloqueante quando o collector estiver indisponivel.
+
+O endpoint de producao mostrado acima (`http://espresso-app-otel-collector:4317`) e o contrato atual; a plataforma de observabilidade deve fornecer esse DNS, ou o deploy da API deve sobrescrever `OTEL_EXPORTER_OTLP_ENDPOINT` com o endpoint interno acordado. Sidecar e collector gateway compartilhado continuam fora do escopo desta mudanca.
+
 ## Geração de massa de dados
 
 Depois que as migrations forem executadas, as funções PostgreSQL podem ser chamadas na ordem abaixo:
@@ -157,6 +190,8 @@ docker run --rm -p 8080:8080 \
   -e DB_PASSWORD=postgres \
   espresso-api
 ```
+
+Para testar o agent no container sem um collector disponivel, acrescente `-e OTEL_TRACES_EXPORTER=none -e OTEL_METRICS_EXPORTER=none`. A API continua atendendo health checks quando o collector esta indisponivel; a telemetria desse periodo pode ser descartada.
 
 Em ambientes Linux, `host.docker.internal` pode exigir configuração adicional; nesse caso, use o endereço acessível do PostgreSQL ou conecte os serviços à mesma rede Docker.
 
