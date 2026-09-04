@@ -37,3 +37,10 @@ management:
         readiness:
           include: readinessState,db
           #
+
+environment:
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://espresso-application-otel-collector:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  OTEL_SERVICE_NAME: espresso-api
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=production
+
